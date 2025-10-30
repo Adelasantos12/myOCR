@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-selfcheck.json
+pip-log.txt
+
+# Logs
+*.log
+
+# User-generated content
+uploads/
+results/
+
+# Database
+dump.rdb
+
+# Test files
+*.pdf

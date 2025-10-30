@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF OCR</title>
+    <style>
+        body { font-family: sans-serif; }
+        .container { max-width: 500px; margin: 50px auto; }
+        #status { margin-top: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload a PDF to convert to text</h1>
+        <form id="upload-form">
+            <input type="file" name="file" id="file-input" accept=".pdf" required>
+            <button type="submit">Upload and Process</button>
+        </form>
+        <div id="status"></div>
+        <div id="results" class="hidden">
+            <h2>Results</h2>
+            <a id="download-txt" href="#" download>Download TXT</a>
+            <br>
+            <a id="download-docx" href="#" download>Download DOCX</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('upload-form');
+        const statusDiv = document.getElementById('status');
+        const resultsDiv = document.getElementById('results');
+        const downloadTxtLink = document.getElementById('download-txt');
+        const downloadDocxLink = document.getElementById('download-docx');
+        const fileInput = document.getElementById('file-input');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            statusDiv.textContent = 'Processing... Please wait.';
+            resultsDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'SUCCESS') {
+                    statusDiv.textContent = 'Processing complete!';
+                    downloadTxtLink.href = `/download/${result.txt_path}`;
+                    downloadDocxLink.href = `/download/${result.docx_path}`;
+                    resultsDiv.classList.remove('hidden');
+                } else {
+                    statusDiv.textContent = `An error occurred: ${result.message}`;
+                }
+            } catch (error) {
+                statusDiv.textContent = 'An unexpected error occurred.';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
