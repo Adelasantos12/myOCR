@@ -28,12 +28,14 @@ def process_pdf(filepath, original_filename):
             print(f"Processing page {page_num + 1}...")
             page = doc.load_page(page_num)
 
-            pix = page.get_pixmap(dpi=300)
+            pix = page.get_pixmap(dpi=600)
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            img = img.convert('L')
+            img = img.point(lambda x: 0 if x < 180 else 255, '1')
 
-            # Use Tesseract to extract text, specifying English language
+            # Use Tesseract to extract text, specifying Spanish and English languages
             try:
-                text = pytesseract.image_to_string(img, lang='eng+spa')
+                text = pytesseract.image_to_string(img, lang='spa+eng')
                 print(f"  > Extracted text (page {page_num + 1}, length {len(text)}): '{text[:100].strip()}...'")
                 full_text += text + "\n\n"
 
