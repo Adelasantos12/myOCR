@@ -1,7 +1,6 @@
 flask
-dramatiq[redis]
-redis
 pytesseract
 PyMuPDF
 python-docx
 Pillow
+fpdf

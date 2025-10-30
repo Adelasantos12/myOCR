@@ -11,54 +11,62 @@ def process_pdf(filepath, original_filename):
     """
     print(f"Starting OCR processing for {filepath}")
 
-    # Ensure the results directory exists
     os.makedirs('results', exist_ok=True)
 
     try:
-        # Generate a unique name for the output file
         base_filename = os.path.splitext(original_filename)[0]
         output_txt_path = os.path.join('results', f"{base_filename}.txt")
         output_docx_path = os.path.join('results', f"{base_filename}.docx")
 
         full_text = ""
-
-        # Open the PDF file
         doc = fitz.open(filepath)
-
-        # Create a new Word document
         document = docx.Document()
 
-        # Iterate through each page of the PDF
+        print(f"PDF has {len(doc)} pages.")
+
         for page_num in range(len(doc)):
+            print(f"Processing page {page_num + 1}...")
             page = doc.load_page(page_num)
 
-            # Render the page as a high-resolution image (300 DPI is good for OCR)
             pix = page.get_pixmap(dpi=300)
-
-            # Convert the pixmap to a PIL Image
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
-            # Use Tesseract to extract text from the image
-            text = pytesseract.image_to_string(img)
-            full_text += text + "\n\n"  # Add page breaks
+            # Use Tesseract to extract text, specifying English language
+            try:
+                text = pytesseract.image_to_string(img, lang='eng+spa')
+                print(f"  > Extracted text (page {page_num + 1}, length {len(text)}): '{text[:100].strip()}...'")
+                full_text += text + "\n\n"
 
-            # Add the text to the Word document, preserving paragraphs
-            for paragraph in text.split('\n'):
-                document.add_paragraph(paragraph)
-            document.add_page_break()
+                for paragraph in text.split('\n'):
+                    document.add_paragraph(paragraph)
+                document.add_page_break()
+            except pytesseract.TesseractNotFoundError:
+                print("  > TESSERACT NOT FOUND. Make sure it's installed and in your PATH.")
+                raise
+            except Exception as e:
+                print(f"  > Error during OCR on page {page_num + 1}: {e}")
+                continue
 
-        # Save the extracted text to a .txt file
+        print(f"Total extracted text length: {len(full_text)}")
+
+        if not full_text.strip():
+            print("Warning: Extracted text is empty. The PDF might be image-only without readable text.")
+            return {
+                'status': 'ERROR',
+                'message': 'OCR processing resulted in empty text. The document might not contain any machine-readable text.'
+            }
+
         with open(output_txt_path, 'w', encoding='utf-8') as f:
             f.write(full_text)
 
-        # Save the Word document
         document.save(output_docx_path)
 
         print(f"Finished processing for {filepath}")
         return {
             'status': 'SUCCESS',
             'txt_path': output_txt_path,
-            'docx_path': output_docx_path
+            'docx_path': output_docx_path,
+            'text': full_text
         }
     except Exception as e:
         print(f"An error occurred: {e}")
