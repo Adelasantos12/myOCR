@@ -5,3 +5,5 @@ PyMuPDF
 python-docx
 Pillow
 fpdf
+google-generativeai
+python-dotenv
