@@ -4,9 +4,13 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import uuid
 from tasks import process_pdf
+import logging
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESULTS_FOLDER'] = 'results'
@@ -45,22 +49,16 @@ def upload_file():
 def download_file(filename):
     return send_from_directory(app.config['RESULTS_FOLDER'], filename, as_attachment=True)
 
-import logging
-
-# ... (existing code)
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-
-# ... (existing code)
-
 @app.route('/feedback', methods=['POST'])
 def handle_feedback():
     data = request.get_json()
-    feedback = data.get('feedback', '')
+    if not data or 'message' not in data:
+        return jsonify({'status': 'ERROR', 'message': 'Invalid data provided.'}), 400
 
-    if feedback:
-        app.logger.info(f"--- New Feedback Received ---\n{feedback}\n---------------------------")
+    feedback_message = data.get('message', '').strip()
+
+    if feedback_message:
+        app.logger.info(f"--- New Feedback Received ---\n{feedback_message}\n---------------------------")
         return jsonify({'status': 'SUCCESS', 'message': 'Feedback received. Thank you!'})
 
     return jsonify({'status': 'ERROR', 'message': 'Feedback cannot be empty.'}), 400
