@@ -22,7 +22,6 @@ def enhance_text_with_ai(text):
             "The text may contain OCR noise, broken line wraps, encoding artifacts, and page layout issues (e.g., multi-column text). "
             "First, detect the primary language of the document (e.g., Spanish, English, French, Portuguese, Italian, German). "
             "Use the detected language only to guide spelling, diacritics, and character normalization. "
-            "Do NOT mention the detected language in the output. "
             "Goal: produce a clean, readable version while preserving the original paragraph structure as closely as possible. "
             "Correct OCR transcription errors, including misspellings, broken words, and obvious character confusions "
             "(such as l/1, O/0, rn/m, etc.). "
