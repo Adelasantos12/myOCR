@@ -4,141 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF OCR Tool</title>
-    <!-- Pico.css for a modern, minimalist style -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <style>
-        /* A few custom styles to refine the look */
-        main.container {
-            max-width: 960px;
-            padding-top: 2rem;
-        }
-        #results article {
-            margin-top: 1.5rem;
-        }
-        textarea {
-            height: 50vh;
-        }
-    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <main class="container">
-        <header>
-            <h1 style="text-align: center;">PDF OCR Tool</h1>
-            <p style="text-align: center;">Upload a scanned PDF to extract its text.</p>
-        </header>
+    <div class="container">
+        <div class="card">
+            <header class="card-header">
+                <h1>Extract text from scanned PDFs</h1>
+                <p class="subheadline">Convert scanned documents into editable text in seconds. No sign-up required.</p>
+                <p class="supporting-text">AI-powered OCR with automatic language detection (English, Spanish, French, Italian, German).</p>
+            </header>
 
-        <div style="text-align: center; margin-bottom: 1.5rem;">
-            <a href="https://your-donation-link-here.com" target="_blank" role="button" class="contrast">☕ Te invito un café, ¡gracias!</a>
+            <div class="upload-area" id="upload-area">
+                <div class="upload-area-content">
+                    <p>Drag and drop your PDF here, or click to select a file</p>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
+                </div>
+            </div>
+
+            <button id="process-btn" class="button-primary" disabled>Process PDF</button>
+
+            <div class="status-area" id="status-area" style="display: none;">
+                <div class="spinner"></div>
+                <p id="status-text">Processing document...</p>
+                <p class="supporting-text" id="status-supporting-text">This may take a few seconds.</p>
+            </div>
+
+            <div class="results-area" id="results-area" style="display: none;">
+                <p class="success-message" id="success-message">Text extracted successfully.</p>
+                <textarea id="extracted-text" readonly placeholder="The extracted text from your document will appear here."></textarea>
+                <div class="download-buttons">
+                    <a id="download-txt" href="#" download class="button-secondary">Download .txt</a>
+                    <a id="download-docx" href="#" download class="button-primary">Download .docx</a>
+                </div>
+            </div>
+
+            <div class="error-area" id="error-area" style="display: none;">
+                <p id="error-message">We couldn’t process this file. Please try another PDF.</p>
+            </div>
         </div>
+        <footer>
+            <p>Independent project. If you find it useful, you can invite me a coffee here.</p>
+        </footer>
+    </div>
 
-        <form id="upload-form">
-            <input type="file" name="file" id="file-input" accept=".pdf" required>
-            <button type="submit">Upload and Process</button>
-        </form>
-
-        <div id="status"></div>
-
-        <div id="results" class="hidden">
-            <article>
-                <header>
-                    <h2>Extracted Text</h2>
-                </header>
-                <textarea id="ocr-text" readonly placeholder="Your extracted text will appear here..."></textarea>
-                <footer>
-                    <a id="download-txt" href="#" download role="button" class="secondary">Download .txt</a>
-                    <a id="download-docx" href="#" download role="button">Download .docx</a>
-                </footer>
-            </article>
-        </div>
-
-        <section id="feedback-section">
-            <article>
-                <header>
-                    <h2>¿Fui útil? ¡Déjame tus comentarios!</h2>
-                </header>
-                <form id="feedback-form">
-                    <textarea id="feedback-text" placeholder="Tus comentarios nos ayudan a mejorar. Por ejemplo: 'Las tablas no se transcriben bien' o 'Me encantaría que soportara otros idiomas'." required></textarea>
-                    <button type="submit" class="secondary">Enviar Comentarios</button>
-                </form>
-            </article>
-        </section>
-    </main>
-
-    <script>
-        const form = document.getElementById('upload-form');
-        const statusDiv = document.getElementById('status');
-        const resultsDiv = document.getElementById('results');
-        const ocrTextArea = document.getElementById('ocr-text');
-        const downloadTxtLink = document.getElementById('download-txt');
-        const downloadDocxLink = document.getElementById('download-docx');
-        const fileInput = document.getElementById('file-input');
-        const submitButton = form.querySelector('button[type="submit"]');
-        const feedbackForm = document.getElementById('feedback-form');
-        const feedbackText = document.getElementById('feedback-text');
-        const feedbackSection = document.getElementById('feedback-section');
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            // Disable button and show loading state
-            submitButton.setAttribute('aria-busy', 'true');
-            submitButton.textContent = 'Processing...';
-            statusDiv.textContent = '';
-            resultsDiv.classList.add('hidden');
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.status === 'SUCCESS') {
-                    statusDiv.textContent = 'Processing complete!';
-                    ocrTextArea.value = result.text;
-                    downloadTxtLink.href = `/download/${result.txt_path}`;
-                    downloadDocxLink.href = `/download/${result.docx_path}`;
-                    resultsDiv.classList.remove('hidden');
-                } else {
-                    statusDiv.innerHTML = `<aside style="background-color: var(--pico-muted-border-color); padding: 1rem;"><strong>Error:</strong> ${result.message}</aside>`;
-                }
-            } catch (error) {
-                statusDiv.innerHTML = `<aside style="background-color: var(--pico-muted-border-color); padding: 1rem;"><strong>Error:</strong> An unexpected network error occurred. The server might be offline or busy.</aside>`;
-                console.error('Error:', error);
-            } finally {
-                // Re-enable button
-                submitButton.removeAttribute('aria-busy');
-                submitButton.textContent = 'Upload and Process';
-            }
-        });
-
-        feedbackForm.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const feedbackContent = feedbackText.value;
-
-            if (feedbackContent.trim()) {
-                try {
-                    const response = await fetch('/feedback', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ feedback: feedbackContent })
-                    });
-                    const result = await response.json();
-
-                    if (result.status === 'SUCCESS') {
-                        feedbackSection.innerHTML = `<article><p><strong>¡Gracias por tus comentarios!</strong></p></article>`;
-                    }
-                } catch (error) {
-                    console.error('Error submitting feedback:', error);
-                }
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
