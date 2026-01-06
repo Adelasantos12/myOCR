@@ -5,6 +5,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def enhance_text_with_ai(text):
+    """
+    Enhances the given text by correcting transcription errors, removing headers/footers,
+    and improving overall formatting for better readability.
+
+    If the GOOGLE_API_KEY is not set, it returns the original text.
+    """
     if not text.strip():
         return ""
 
@@ -18,39 +24,28 @@ def enhance_text_with_ai(text):
         model = genai.GenerativeModel('gemini-pro')
 
         prompt = (
-            "You will receive OCR-extracted text from a PDF. "
-            "The text may contain OCR noise, broken line wraps, encoding artifacts, and page layout issues (e.g., multi-column text). "
-            "First, detect the primary language of the document (e.g., Spanish, English, French, Portuguese, Italian, German). "
-            "Use the detected language only to guide spelling, diacritics, and character normalization. "
-            "Goal: produce a clean, readable version while preserving the original paragraph structure as closely as possible. "
-            "Correct OCR transcription errors, including misspellings, broken words, and obvious character confusions "
-            "(such as l/1, O/0, rn/m, etc.). "
-            "Normalize encoding issues and diacritics according to the detected language. "
-            "If accented characters or special letters are replaced by digits or symbols, correct them ONLY when unambiguous from context. "
-            "Do not invent content. "
-            "Remove repetitive headers, footers, page numbers, and running titles IF they are not part of the main body. "
-            "Paragraphs and line breaks (critical): "
-            "Preserve paragraph boundaries as in the original document. "
-            "Use exactly one blank line between paragraphs. "
-            "Do NOT merge distinct paragraphs. "
-            "Return plain text only. "
-            f"\n\n--- OCR TEXT ---\n{text}"
+            "Please process the following OCR-extracted text from a scanned document. "
+            "Your task is to correct any transcription errors, remove any headers, footers, "
+            "or page numbers, and format the text to be clean and readable while preserving "
+            "the original's paragraph structure and justification. "
+            "Ensure the output is a single, continuous block of text, ready for a DOCX file."
+            f"\n\n--- OCR Text ---\n{text}"
         )
 
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                candidate_count=1,
-                max_output_tokens=2048,
-                temperature=0.2
-            )
-        )
+        response = model.generate_content(prompt,
+                                          generation_config=genai.types.GenerationConfig(
+                                              candidate_count=1,
+                                              stop_sequences=['\n\n\n'],
+                                              max_output_tokens=2048,
+                                              temperature=0.2))
 
         if response and response.candidates:
-            return response.candidates[0].content.parts[0].text
+            return response.candidates[0].content.parts[0].text.strip()
 
     except Exception as e:
         print(f"Error during AI text enhancement: {e}")
+        # Fallback to original text in case of an API error
         return text
 
+    # Fallback if the response is empty or malformed
     return text

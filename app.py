@@ -45,5 +45,25 @@ def upload_file():
 def download_file(filename):
     return send_from_directory(app.config['RESULTS_FOLDER'], filename, as_attachment=True)
 
+import logging
+
+# ... (existing code)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+
+# ... (existing code)
+
+@app.route('/feedback', methods=['POST'])
+def handle_feedback():
+    data = request.get_json()
+    feedback = data.get('feedback', '')
+
+    if feedback:
+        app.logger.info(f"--- New Feedback Received ---\n{feedback}\n---------------------------")
+        return jsonify({'status': 'SUCCESS', 'message': 'Feedback received. Thank you!'})
+
+    return jsonify({'status': 'ERROR', 'message': 'Feedback cannot be empty.'}), 400
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
