@@ -10,3 +10,4 @@ python-doctr[torch]
 torch
 torchvision
 scikit-learn
+opencv-python-headless
