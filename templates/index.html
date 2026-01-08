@@ -27,6 +27,10 @@
             <p style="text-align: center;">Upload a scanned PDF to extract its text.</p>
         </header>
 
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <a href="https://your-donation-link-here.com" target="_blank" role="button" class="contrast">☕ Te invito un café, ¡gracias!</a>
+        </div>
+
         <form id="upload-form">
             <input type="file" name="file" id="file-input" accept=".pdf" required>
             <button type="submit">Upload and Process</button>
@@ -46,6 +50,18 @@
                 </footer>
             </article>
         </div>
+
+        <section id="feedback-section">
+            <article>
+                <header>
+                    <h2>¿Fui útil? ¡Déjame tus comentarios!</h2>
+                </header>
+                <form id="feedback-form">
+                    <textarea id="feedback-text" placeholder="Tus comentarios nos ayudan a mejorar. Por ejemplo: 'Las tablas no se transcriben bien' o 'Me encantaría que soportara otros idiomas'." required></textarea>
+                    <button type="submit" class="secondary">Enviar Comentarios</button>
+                </form>
+            </article>
+        </section>
     </main>
 
     <script>
@@ -57,6 +73,9 @@
         const downloadDocxLink = document.getElementById('download-docx');
         const fileInput = document.getElementById('file-input');
         const submitButton = form.querySelector('button[type="submit"]');
+        const feedbackForm = document.getElementById('feedback-form');
+        const feedbackText = document.getElementById('feedback-text');
+        const feedbackSection = document.getElementById('feedback-section');
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
@@ -94,6 +113,30 @@
                 // Re-enable button
                 submitButton.removeAttribute('aria-busy');
                 submitButton.textContent = 'Upload and Process';
+            }
+        });
+
+        feedbackForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const feedbackContent = feedbackText.value;
+
+            if (feedbackContent.trim()) {
+                try {
+                    const response = await fetch('/feedback', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ feedback: feedbackContent })
+                    });
+                    const result = await response.json();
+
+                    if (result.status === 'SUCCESS') {
+                        feedbackSection.innerHTML = `<article><p><strong>¡Gracias por tus comentarios!</strong></p></article>`;
+                    }
+                } catch (error) {
+                    console.error('Error submitting feedback:', error);
+                }
             }
         });
     </script>

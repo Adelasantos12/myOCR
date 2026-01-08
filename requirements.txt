@@ -1,7 +1,13 @@
 flask
 Flask-Cors
-pytesseract
 PyMuPDF
 python-docx
 Pillow
 fpdf
+google-generativeai
+python-dotenv
+python-doctr[torch]
+torch
+torchvision
+scikit-learn
+opencv-python-headless
