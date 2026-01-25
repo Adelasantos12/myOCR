@@ -1,23 +1,24 @@
-# Imagen base con Python
+# Use an official Python runtime as a parent image
 FROM python:3.10-slim
 
-# Instalar Tesseract OCR y librerías necesarias
-RUN apt-get update && apt-get install -y tesseract-ocr libtesseract-dev poppler-utils
+# Install system dependencies for OpenCV and docTR
+# We include libgl1 and libglib2.0-0 to avoid "libGL.so.1" and "libglib-2.0.so.0" errors
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Crear directorio de trabajo
+# Set the working directory in the container
 WORKDIR /app
 
-# Copiar todo el contenido del proyecto
+# Copy the current directory contents into the container at /app
 COPY . /app
 
-# Instalar dependencias de Python
+# Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Configurar variables de entorno
-ENV PORT=5000
-
-# Exponer el puerto
+# Make port 5000 available to the world outside this container
 EXPOSE 5000
 
-# Comando de inicio
+# Run app.py when the container launches
 CMD ["python", "app.py"]
