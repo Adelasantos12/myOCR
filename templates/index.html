@@ -3,68 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF OCR Tool</title>
+    <title>OCR - Document Extraction</title>
     <!-- Pico.css for a modern, minimalist style -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
     <style>
-        /* A few custom styles to refine the look */
-        main.container {
-            max-width: 960px;
-            padding-top: 2rem;
+        :root {
+            --pico-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            --pico-border-radius: 4px;
         }
-        #results article {
-            margin-top: 1.5rem;
+        main.container {
+            max-width: 800px;
+            padding-top: 4rem;
+        }
+        header {
+            margin-bottom: 3rem;
+            text-align: left;
+        }
+        h1 {
+            font-weight: 300;
+            font-size: 2rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+        p.subtitle {
+            color: var(--pico-muted-color);
+            font-size: 0.9rem;
+        }
+        #upload-form {
+            border: 1px dashed var(--pico-muted-border-color);
+            padding: 2rem;
+            border-radius: var(--pico-border-radius);
+            background: transparent;
+            transition: border-color 0.2s;
+        }
+        #upload-form:hover {
+            border-color: var(--pico-primary);
+        }
+        button {
+            margin-top: 1rem;
+            background-color: #2d3436;
+            border: none;
+        }
+        button:hover {
+            background-color: #000;
         }
         textarea {
-            height: 50vh;
+            height: 400px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            background-color: #fcfcfc;
+            border-color: var(--pico-muted-border-color);
+        }
+        .hidden { display: none; }
+        footer.results-footer {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 1rem;
+        }
+        small {
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            font-size: 0.7rem;
+            color: var(--pico-muted-color);
         }
     </style>
 </head>
 <body>
     <main class="container">
         <header>
-            <h1 style="text-align: center;">PDF OCR Tool</h1>
-            <p style="text-align: center;">Upload a scanned PDF to extract its text.</p>
+            <h1>OCR Pipeline</h1>
+            <p class="subtitle">Extract structured text from PDF documents using deep learning layout analysis.</p>
         </header>
 
-        <form id="upload-form">
-            <input type="file" name="file" id="file-input" accept=".pdf" required>
-            <button type="submit">Upload and Process</button>
-        </form>
+        <section>
+            <form id="upload-form">
+                <label for="file-input">
+                    <small>Select PDF document</small>
+                </label>
+                <input type="file" name="file" id="file-input" accept=".pdf" required>
+                <button type="submit" id="submit-btn">Process Document</button>
+            </form>
+        </section>
 
-        <div id="status"></div>
+        <section id="status-section" style="margin-top: 1rem; height: 1.5rem;"></section>
 
-        <div id="results" class="hidden">
+        <section id="results" class="hidden">
             <article>
                 <header>
-                    <h2>Extracted Text</h2>
+                    <small>Extracted Content Preview</small>
                 </header>
-                <textarea id="ocr-text" readonly placeholder="Your extracted text will appear here..."></textarea>
-                <footer>
-                    <a id="download-txt" href="#" download role="button" class="secondary">Download .txt</a>
-                    <a id="download-docx" href="#" download role="button">Download .docx</a>
+                <textarea id="ocr-text" readonly placeholder="Processing..."></textarea>
+                <footer class="results-footer">
+                    <a id="download-txt" href="#" download role="button" class="secondary outline">Download TXT</a>
+                    <a id="download-docx" href="#" download role="button" class="outline">Download DOCX</a>
                 </footer>
             </article>
-        </div>
+        </section>
     </main>
 
     <script>
         const form = document.getElementById('upload-form');
-        const statusDiv = document.getElementById('status');
+        const statusSection = document.getElementById('status-section');
         const resultsDiv = document.getElementById('results');
         const ocrTextArea = document.getElementById('ocr-text');
         const downloadTxtLink = document.getElementById('download-txt');
         const downloadDocxLink = document.getElementById('download-docx');
         const fileInput = document.getElementById('file-input');
-        const submitButton = form.querySelector('button[type="submit"]');
+        const submitButton = document.getElementById('submit-btn');
 
         form.addEventListener('submit', async (event) => {
             event.preventDefault();
 
-            // Disable button and show loading state
+            // UI state: Processing
             submitButton.setAttribute('aria-busy', 'true');
-            submitButton.textContent = 'Processing...';
-            statusDiv.textContent = '';
+            submitButton.disabled = true;
+            statusSection.innerHTML = '<small>Processing document...</small>';
             resultsDiv.classList.add('hidden');
 
             const formData = new FormData();
@@ -76,24 +131,27 @@
                     body: formData
                 });
 
+                if (!response.ok) {
+                    throw new Error(`Server responded with ${response.status}`);
+                }
+
                 const result = await response.json();
 
                 if (result.status === 'SUCCESS') {
-                    statusDiv.textContent = 'Processing complete!';
+                    statusSection.innerHTML = '<small style="color: var(--pico-primary);">Success: Processing complete.</small>';
                     ocrTextArea.value = result.text;
                     downloadTxtLink.href = `/download/${result.txt_path}`;
                     downloadDocxLink.href = `/download/${result.docx_path}`;
                     resultsDiv.classList.remove('hidden');
                 } else {
-                    statusDiv.innerHTML = `<aside style="background-color: var(--pico-muted-border-color); padding: 1rem;"><strong>Error:</strong> ${result.message}</aside>`;
+                    statusSection.innerHTML = `<small style="color: #d63031;">Error: ${result.message}</small>`;
                 }
             } catch (error) {
-                statusDiv.innerHTML = `<aside style="background-color: var(--pico-muted-border-color); padding: 1rem;"><strong>Error:</strong> An unexpected network error occurred. The server might be offline or busy.</aside>`;
+                statusSection.innerHTML = `<small style="color: #d63031;">Error: Connection failure or internal server error.</small>`;
                 console.error('Error:', error);
             } finally {
-                // Re-enable button
                 submitButton.removeAttribute('aria-busy');
-                submitButton.textContent = 'Upload and Process';
+                submitButton.disabled = false;
             }
         });
     </script>
